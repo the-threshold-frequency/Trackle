@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-/*import { Button } from '@/components/ui/button';*/
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '../lib/supabaseClient';
 import Link from 'next/link';
@@ -14,12 +13,13 @@ type Task = {
   id: string;
   title: string;
   status: 'Backlog' | 'To Do' | 'In Progress' | 'Done';
-  // optional if additional properties exist
 };
 
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [sprintGoal, setSprintGoal] = useState<string | null>(null);
+  const [sprintEndTime, setSprintEndTime] = useState<Date | null>(null);
+  const [countdown, setCountdown] = useState('');
   const [standupsLogged, setStandupsLogged] = useState(0);
   const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
   const [sprintStats, setSprintStats] = useState({
@@ -36,11 +36,12 @@ export default function HomePage() {
 
       const { data: activeSprint } = await supabase
         .from('sprints')
-        .select('id, goal')
+        .select('id, goal, end_date')
         .eq('is_active', true)
         .single();
 
       setSprintGoal(activeSprint?.goal || null);
+      if (activeSprint?.end_date) setSprintEndTime(new Date(activeSprint.end_date));
 
       const { data: tasks } = await supabase
         .from('tasks')
@@ -66,12 +67,35 @@ export default function HomePage() {
     fetchStats();
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (sprintEndTime) {
+        const now = new Date().getTime();
+        const end = sprintEndTime.getTime();
+        const diff = end - now;
+
+        if (diff <= 0) {
+          setCountdown('Sprint Over');
+        } else {
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+          const minutes = Math.floor((diff / (1000 * 60)) % 60);
+          const seconds = Math.floor((diff / 1000) % 60);
+
+          setCountdown(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sprintEndTime]);
+
   const progressPercent = sprintStats.total
     ? Math.round((sprintStats.done / sprintStats.total) * 100)
     : 0;
 
   return (
-    <main className="min-h-screen bg-[#0f0f1a] text-white p-6">
+    <main className="min-h-screen bg-[#0f0f1a] text-white p-6 pb-24 relative">
       <div className="max-w-5xl mx-auto space-y-8">
         <motion.h1
           initial={{ opacity: 0, y: -10 }}
@@ -159,6 +183,13 @@ export default function HomePage() {
           </div>
         )}
       </div>
+
+      {/* Countdown Floating Timer */}
+      {countdown && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 backdrop-blur-md bg-white/10 border border-cyan-400/30 text-cyan-100 px-4 py-2 rounded-full text-xs shadow-lg">
+          ⏳ Time Left: {countdown}
+        </div>
+      )}
     </main>
   );
 }
