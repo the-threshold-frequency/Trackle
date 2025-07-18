@@ -3,17 +3,25 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+/*import { Button } from '@/components/ui/button';*/
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '../lib/supabaseClient';
 import Link from 'next/link';
 import { Loader2, CheckCircle, CalendarClock, ClipboardList, ListChecks } from 'lucide-react';
 
+// ✅ Define the Task type
+type Task = {
+  id: string;
+  title: string;
+  status: 'Backlog' | 'To Do' | 'In Progress' | 'Done';
+  // optional if additional properties exist
+};
+
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [sprintGoal, setSprintGoal] = useState<string | null>(null);
   const [standupsLogged, setStandupsLogged] = useState(0);
-  const [completedTasks, setCompletedTasks] = useState<any[]>([]);
+  const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
   const [sprintStats, setSprintStats] = useState({
     total: 0,
     backlog: 0,
