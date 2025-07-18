@@ -24,7 +24,6 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
-// 🧩 Task Interface
 interface Task {
   id: string;
   title: string;
@@ -33,7 +32,6 @@ interface Task {
   status: 'Backlog' | 'To Do' | 'In Progress' | 'Done';
 }
 
-// 🧩 Draggable Task Card
 interface DraggableCardProps {
   task: Task;
   onCommentChange: (taskId: string, comment: string) => void;
@@ -55,6 +53,7 @@ function DraggableCard({ task, onCommentChange, isDragging = false }: DraggableC
     transition,
     opacity: sortableDragging ? 0.5 : 1,
     zIndex: sortableDragging ? 50 : 1,
+    touchAction: 'none', // Prevent touch interference
   };
 
   return (
@@ -81,13 +80,12 @@ function DraggableCard({ task, onCommentChange, isDragging = false }: DraggableC
   );
 }
 
-// 🧩 Droppable Column
 function DroppableColumn({ status, children }: { status: Task['status']; children: React.ReactNode }) {
   const { setNodeRef } = useDroppable({ id: status });
   return (
     <div
       ref={setNodeRef}
-      className="bg-[#1a1a2f] rounded-xl p-4 border border-cyan-800 min-h-[200px]"
+      className="bg-[#1a1a2f] rounded-xl p-4 border border-cyan-800 min-h-[200px] touch-action-none"
     >
       <h2 className="text-xl font-semibold text-cyan-300 mb-4">{status}</h2>
       {children}
@@ -95,11 +93,20 @@ function DroppableColumn({ status, children }: { status: Task['status']; childre
   );
 }
 
-// 🧠 Sprint Board Page
 export default function SprintBoardPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    })
+  );
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -110,6 +117,14 @@ export default function SprintBoardPage() {
     };
     fetchTasks();
   }, []);
+
+  useEffect(() => {
+    if (activeTaskId) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [activeTaskId]);
 
   const statuses: Task['status'][] = ['Backlog', 'To Do', 'In Progress', 'Done'];
 
@@ -149,13 +164,8 @@ export default function SprintBoardPage() {
 
   const activeTask = tasks.find((t) => t.id === activeTaskId);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor)
-  );
-
   return (
-    <main className="min-h-screen bg-[#0f0f1a] text-white p-6">
+    <main className="min-h-screen bg-[#0f0f1a] text-white p-6 touch-action-none">
       <h1 className="text-3xl font-bold text-cyan-400 mb-6">📌 Sprint Board</h1>
 
       {loading ? (
