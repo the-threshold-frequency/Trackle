@@ -11,6 +11,10 @@ import {
   DragOverlay,
   DragStartEvent,
   DragEndEvent,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  TouchSensor,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -145,6 +149,11 @@ export default function SprintBoardPage() {
 
   const activeTask = tasks.find((t) => t.id === activeTaskId);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor)
+  );
+
   return (
     <main className="min-h-screen bg-[#0f0f1a] text-white p-6">
       <h1 className="text-3xl font-bold text-cyan-400 mb-6">📌 Sprint Board</h1>
@@ -155,6 +164,7 @@ export default function SprintBoardPage() {
         </div>
       ) : (
         <DndContext
+          sensors={sensors}
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
