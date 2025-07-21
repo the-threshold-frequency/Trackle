@@ -82,7 +82,7 @@ export default function BacklogPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(new Date());
-      checkExpiredTasks();
+
     }, 60000);
     return () => clearInterval(interval);
   }, [tasks]);
